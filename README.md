@@ -2,20 +2,20 @@ Self-hosted cloud storage system written in Go
 
 ## Features implemented
 
-[] - HTMX gui
+- [ ] HTMX gui
 
-[] - User authentication
+- [ ] User authentication
 
-[] - File upload
+- [ ] File upload
 
-[] - File download
+- [ ] File download
 
-[] - File delete
+- [ ] File delete
 
-[] - File rename
+- [ ] File rename
 
-[] - File move
+- [ ] - File move
 
-[] - File copy
+- [ ] File copy
 
-[] - File search
+- [ ] File search
