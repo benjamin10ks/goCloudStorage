@@ -14,7 +14,7 @@ Self-hosted cloud storage system written in Go
 
 - [ ] File rename
 
-- [ ] - File move
+- [ ] File move
 
 - [ ] File copy
 

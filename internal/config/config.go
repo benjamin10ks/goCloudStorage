@@ -5,9 +5,9 @@ import (
 	"net/http"
 )
 
-var mux = http.NewServeMux()
-
-var Server = &http.Server{
-	Addr:    ":8080",
-	Handler: mux,
+func NewServer(handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:    ":8080",
+		Handler: handler,
+	}
 }
