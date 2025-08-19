@@ -11,7 +11,19 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", handlers.PlaceHolderHandler)
+	mux.HandleFunc("/api/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK!"))
+	})
+
+	mux.HandleFunc("/", handlers.TemplateRenderHandler)
+
+	mux.HandleFunc("/api/upload", handlers.UploadHandler)
+	mux.HandleFunc("/api/download", handlers.DownloadHandler)
+	mux.HandleFunc("/api/list", handlers.ListFilesHandler)
+	mux.HandleFunc("/api/delete", handlers.DeleteFileHandler)
+	mux.HandleFunc("/api/share", handlers.ShareFileHandler)
 
 	server := config.NewServer(mux)
 
