@@ -6,9 +6,12 @@ import (
 
 	"github.com/benjamin10ks/goCloudStorage/internal/config"
 	"github.com/benjamin10ks/goCloudStorage/internal/handlers"
+	"github.com/benjamin10ks/goCloudStorage/internal/services"
 )
 
 func main() {
+	storageService := services.NewStorageService("./storage/")
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/healthz", func(w http.ResponseWriter, r *http.Request) {
