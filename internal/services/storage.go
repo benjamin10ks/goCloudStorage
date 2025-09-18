@@ -24,6 +24,14 @@ func (s *StorageService) CreateUserDirectory(userID int) error {
 	return nil
 }
 
+func (s *StorageService) DeleteUserDirectory(userID int) error {
+	err := os.RemoveAll(s.GetUserDirectory(userID))
+	if err != nil {
+		return fmt.Errorf("failed to delete user directory: %w", err)
+	}
+	return nil
+}
+
 func (s *StorageService) GetUserDirectory(userID int) string {
 	return filepath.Join(s.basePath, "users", fmt.Sprintf("%d", userID))
 }
