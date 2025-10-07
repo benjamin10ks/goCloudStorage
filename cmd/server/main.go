@@ -1,18 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/benjamin10ks/goCloudStorage/internal/config"
+	"github.com/benjamin10ks/goCloudStorage/internal/database"
 	"github.com/benjamin10ks/goCloudStorage/internal/handlers"
-	"github.com/benjamin10ks/goCloudStorage/internal/services"
 )
 
 func main() {
-	storageService := services.NewStorageService("./storage/")
-
 	mux := http.NewServeMux()
+	store, err := database.NewPostgresStore()
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	fmt.Printf("Connected to database successfully %+v\n", store)
 
 	mux.HandleFunc("/api/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
