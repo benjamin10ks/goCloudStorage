@@ -6,6 +6,7 @@ services:
       - ../.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./internal/database/migrations:/docker-entrypoint-initdb.d/
     restart: unless-stopped
 
   app:
