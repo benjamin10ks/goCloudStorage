@@ -2,7 +2,12 @@
 package models
 
 type User struct {
-	ID           int64  `json:"id" db:"user_id"`
+	ID           int    `json:"id" db:"user_id"`
 	Name         string `json:"name" db:"user_name"`
-	PasswordHash string `json:"password_hash" db:"password_hash"`
+	PasswordHash []byte
+}
+
+type CreateAccountRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }

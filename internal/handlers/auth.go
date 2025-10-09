@@ -1,13 +1,13 @@
 package handlers
 
-func loginHandler() {
+func HandleLogin() {
 	// placeholder implementation
 }
 
-func registerHandler() {
+func HandleCreateAccount() {
 	// placeholder implementation
 }
 
-func logoutHandler() {
+func HandleLogout() {
 	// placeholder implementation
 }

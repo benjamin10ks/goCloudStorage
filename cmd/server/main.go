@@ -26,11 +26,11 @@ func main() {
 
 	mux.HandleFunc("/", handlers.TemplateRenderHandler)
 
-	mux.HandleFunc("/api/upload", handlers.UploadHandler)
-	mux.HandleFunc("/api/download", handlers.DownloadHandler)
-	mux.HandleFunc("/api/list", handlers.ListFilesHandler)
-	mux.HandleFunc("/api/delete", handlers.DeleteFileHandler)
-	mux.HandleFunc("/api/share", handlers.ShareFileHandler)
+	mux.HandleFunc("/api/upload", handlers.HandleUpload)
+	mux.HandleFunc("/api/download", handlers.HandleDownload)
+	mux.HandleFunc("/api/list", handlers.HandleListFiles)
+	mux.HandleFunc("/api/delete", handlers.HandleDeleteFile)
+	mux.HandleFunc("/api/share", handlers.HandleShareFile)
 
 	server := config.NewServer(mux)
 
