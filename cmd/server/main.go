@@ -8,15 +8,22 @@ import (
 	"github.com/benjamin10ks/goCloudStorage/internal/config"
 	"github.com/benjamin10ks/goCloudStorage/internal/database"
 	"github.com/benjamin10ks/goCloudStorage/internal/handlers"
+	"github.com/benjamin10ks/goCloudStorage/internal/services"
 )
 
 func main() {
-	mux := http.NewServeMux()
 	store, err := database.NewPostgresStore()
+	storageService := services.NewStorageService("/var/goCloudStorage/storage/users") // temp path
+	userService := services.NewUserService(store.DB, storageService)
+
+	h := handlers.NewHandler(userService)
+
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	fmt.Printf("Connected to database successfully %+v\n", store)
+
+	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

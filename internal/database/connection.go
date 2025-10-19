@@ -12,7 +12,7 @@ import (
 )
 
 type PostgresStore struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
@@ -40,7 +40,7 @@ func NewPostgresStore() (*PostgresStore, error) {
 		err := db.Ping()
 		if err == nil {
 			log.Println("Successfully connected to the database")
-			return &PostgresStore{db: db}, nil
+			return &PostgresStore{DB: db}, nil
 		}
 		log.Printf("Failed to connect to database retrying... (attempt %d/%d): %v", i+1, maxRetries, err)
 		time.Sleep(2 * time.Second)
@@ -51,5 +51,5 @@ func NewPostgresStore() (*PostgresStore, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	return &PostgresStore{db: db}, nil
+	return &PostgresStore{DB: db}, nil
 }
