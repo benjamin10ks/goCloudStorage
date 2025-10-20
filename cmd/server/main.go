@@ -13,10 +13,10 @@ import (
 
 func main() {
 	store, err := database.NewPostgresStore()
-	storageService := services.NewStorageService("/var/goCloudStorage/storage/users") // temp path
+	storageService := services.NewStorageService("./storage/users") // temp path
 	userService := services.NewUserService(store.DB, storageService)
 
-	h := handlers.NewHandler(userService)
+	authHandler := handlers.NewAuthHandler(userService)
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
