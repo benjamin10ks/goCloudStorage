@@ -17,7 +17,7 @@ func NewStorageService(basePath string) *StorageService {
 }
 
 func (s *StorageService) CreateUserDirectory(userID int) error {
-	err := os.MkdirAll(s.GetUserDirectory(userID), 0700)
+	err := os.MkdirAll(s.GetUserDirectory(userID), 0o700)
 	if err != nil {
 		return fmt.Errorf("failed to create user directory: %w", err)
 	}
