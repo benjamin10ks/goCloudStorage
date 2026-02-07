@@ -32,9 +32,8 @@ func (u *UserService) CreateUser(username, password string) (*models.User, error
 		return nil, err
 	}
 	return &models.User{
-		ID:           userID,
-		Name:         username,
-		PasswordHash: passwordHash,
+		ID:   userID,
+		Name: username,
 	}, nil
 }
 
