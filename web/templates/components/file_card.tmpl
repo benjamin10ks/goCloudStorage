@@ -1,0 +1,9 @@
+{{define "file_card"}}
+<div class="card">
+    <strong>{{.Name}}</strong>
+    <p>{{.Size}} KB</p>
+
+    <button onclick="openModal('fileInfoModal')">Info</button>
+    <button onclick="openModal('shareModal')">Share</button>
+</div>
+{{end}}

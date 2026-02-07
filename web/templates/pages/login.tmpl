@@ -1,0 +1,28 @@
+{{define "login"}}
+{{template "layout" .}}
+
+{{define "title"}}Login{{end}}
+
+{{define "content"}}
+<h2>Login</h2>
+
+<form method="POST" action="/login">
+    <div>
+        <label>Email</label><br>
+        <input type="email" name="email" required>
+    </div>
+
+    <div>
+        <label>Password</label><br>
+        <input type="password" name="password" required>
+    </div>
+
+    <button type="submit">Login</button>
+</form>
+
+<p>
+    Don’t have an account?
+    <a href="/signup">Create one</a>
+</p>
+{{end}}
+{{end}}

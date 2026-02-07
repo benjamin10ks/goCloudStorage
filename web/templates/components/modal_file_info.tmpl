@@ -1,0 +1,13 @@
+{{define "modal_file_info"}}
+<div id="fileInfoModal" class="modal" onclick="closeModal('fileInfoModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3>File Properties</h3>
+
+        <p><strong>Name:</strong> {{.SelectedFile.Name}}</p>
+        <p><strong>Size:</strong> {{.SelectedFile.Size}} KB</p>
+        <p><strong>Uploaded:</strong> {{.SelectedFile.CreatedAt}}</p>
+
+        <button onclick="closeModal('fileInfoModal')">Close</button>
+    </div>
+</div>
+{{end}}

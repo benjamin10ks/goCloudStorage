@@ -1,0 +1,14 @@
+{{define "modal_share"}}
+<div id="shareModal" class="modal" onclick="closeModal('shareModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3>Share File</h3>
+
+        <p>(Coming soon)</p>
+
+        <input type="email" placeholder="user@example.com" disabled>
+
+        <button disabled>Share</button>
+        <button onclick="closeModal('shareModal')">Close</button>
+    </div>
+</div>
+{{end}}

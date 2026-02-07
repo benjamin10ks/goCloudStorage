@@ -11,7 +11,7 @@ import (
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	ct := r.Header.Get("Content-Type")
 
-	dst, err := os.Create()
+	dst, err := os.Create("file.bin")
 	if err != nil {
 		http.Error(w, "Failed to create file", http.StatusInternalServerError)
 		return
