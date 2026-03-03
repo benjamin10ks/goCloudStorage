@@ -1,11 +1,11 @@
 // Package config contains server configuration.
-package config
+package main
 
 import (
 	"net/http"
 )
 
-func NewServer(handler http.Handler) *http.Server {
+func newServer(handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:    ":8080",
 		Handler: handler,
