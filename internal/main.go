@@ -14,7 +14,7 @@ func main() {
 		w.Write([]byte("OK!"))
 	})
 
-	mux.HandleFunc("/", blah)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {})
 
 	mux.HandleFunc("/api/upload", handleUpload)
 	mux.HandleFunc("/api/download", handleDownload)
