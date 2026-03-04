@@ -21,7 +21,7 @@ func main() {
 
 	app := &App{
 		db:   db,
-		tmpl: template.Must(template.ParseGlob("templates/*.tmpl")),
+		tmpl: template.Must(template.ParseGlob("web/templates/*.tmpl")),
 	}
 
 	mux := http.NewServeMux()
@@ -33,24 +33,26 @@ func main() {
 		w.Write([]byte("OK!"))
 	})
 
-	mux.HandleFunc("/", handleLandingPage)
+	// Dashboard routes
+	mux.HandleFunc("/", app.handleLandingPage)
+	mux.HandleFunc("/home", app.handleHomePage)
 
 	// Auth routes
-	mux.HandleFunc("/auth/register", handleRegister)
-	mux.HandleFunc("/auth/login", handleLogin)
-	mux.HandleFunc("/auth/logout", handleLogout)
+	mux.HandleFunc("/auth/register", app.handleRegister)
+	mux.HandleFunc("/auth/login", app.handleLogin)
+	mux.HandleFunc("/auth/logout", app.handleLogout)
 
 	// User routes
-	mux.HandleFunc("GET /api/user/{id}", handleUserProfile)
-	mux.HandleFunc("PUT /api/user/{id}", handleUpdateUser)
-	mux.HandleFunc("DELETE /api/user/{id}", handleDeleteUser)
-	mux.HandleFunc("GET /api/user/{id}/files", handleListUserFiles)
+	mux.HandleFunc("GET /api/user/{id}", app.handleUserProfile)
+	mux.HandleFunc("PUT /api/user/{id}", app.handleUpdateUser)
+	mux.HandleFunc("DELETE /api/user/{id}", app.handleDeleteUser)
+	mux.HandleFunc("GET /api/user/{id}/files", app.handleListUserFiles)
 
 	// File routes
-	mux.HandleFunc("POST /api/upload", handleUpload)
-	mux.HandleFunc("GET /api/files/{id}/download", handleDownload)
-	mux.HandleFunc("DELETE /api/delete/{id}", handleDeleteFile)
-	mux.HandleFunc("POST /api/files/{id}/share", handleShareFile)
+	mux.HandleFunc("POST /api/upload", app.handleUpload)
+	mux.HandleFunc("GET /api/files/{id}/download", app.handleDownload)
+	mux.HandleFunc("DELETE /api/delete/{id}", app.handleDeleteFile)
+	mux.HandleFunc("POST /api/files/{id}/share", app.handleShareFile)
 
 	log.Printf("Starting server on %s", server.Addr)
 	if err := server.ListenAndServe(); err != nil {
