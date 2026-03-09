@@ -19,6 +19,11 @@ func main() {
 	}
 	log.Println("Database connection established")
 
+	err = runMigrations(db)
+	if err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
 	app := &App{
 		db:   db,
 		tmpl: template.Must(template.ParseGlob("web/templates/*.tmpl")),
