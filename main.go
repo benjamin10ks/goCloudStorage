@@ -8,8 +8,10 @@ import (
 )
 
 type App struct {
-	db   *sql.DB
-	tmpl *template.Template
+	db      *sql.DB
+	tmpl    *template.Template
+	auth    *AuthService
+	storage *StorageService
 }
 
 func main() {
@@ -25,8 +27,10 @@ func main() {
 	}
 
 	app := &App{
-		db:   db,
-		tmpl: template.Must(template.ParseGlob("web/templates/*.tmpl")),
+		db:      db,
+		tmpl:    template.Must(template.ParseGlob("web/templates/*.tmpl")),
+		auth:    NewAuthService(),
+		storage: NewStorageService(),
 	}
 
 	mux := http.NewServeMux()
