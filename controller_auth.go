@@ -6,10 +6,7 @@ import (
 )
 
 func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-
-	user, err := a.auth.Register(email, password, a.db)
+	user, err := a.auth.Register(token, a.db)
 	if err != nil {
 		log.Printf("Registration failed for email %s: %v", email, err)
 		http.Error(w, "Registration failed", http.StatusInternalServerError)
@@ -20,9 +17,10 @@ func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-	a.auth.Login(email, password)
+	err := a.auth.Login(token)
+	if err != nil {
+		log.Printf("Login failed: %v", err)
+	}
 }
 
 // remove session cookie
