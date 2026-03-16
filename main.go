@@ -30,7 +30,7 @@ func main() {
 		db:      db,
 		tmpl:    template.Must(template.ParseGlob("web/templates/*.tmpl")),
 		auth:    NewAuthService(),
-		storage: NewStorageService(),
+		storage: NewStorageService(BASE_PATH),
 	}
 
 	mux := http.NewServeMux()

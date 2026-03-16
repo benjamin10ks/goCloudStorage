@@ -1,8 +1,11 @@
-// Package config contains server configuration.
 package main
 
 import (
 	"net/http"
+)
+
+const (
+	BASE_PATH = "./storage/users/"
 )
 
 func newServer(handler http.Handler) *http.Server {
