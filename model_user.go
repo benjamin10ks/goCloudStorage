@@ -1,11 +1,22 @@
 package main
 
-type Account struct {
-	ID int `json:"id"`
-}
+import (
+	"strconv"
+
+	"github.com/go-webauthn/webauthn/webauthn"
+)
 
 type User struct {
-	ID          int    `json:"id"`
+	ID          int64  `json:"id"`
+	Username    string `json:"username"`
 	DisplayName string `json:"display_name"`
-	BasePath    string `json:"base_path"`
 }
+
+func (u *User) WebAuthnID() []byte { return []byte(strconv.FormatInt(u.ID, 10)) }
+
+func (u *User) WebAuthnName() string { return u.Username }
+
+func (u *User) WebAuthnDisplayName() string { return u.DisplayName }
+
+// Placeholder... Later get passkey with query
+func (u *User) WebAuthnCredentials() []webauthn.Credential { return nil }
