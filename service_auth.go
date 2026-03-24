@@ -50,6 +50,14 @@ func (a *AuthService) BeginLogin(user *User) (*protocol.CredentialAssertion, *we
 	return options, sessionData, nil
 }
 
+func (a *AuthService) BeginLoginWitoutUser() (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
+	options, sessionData, err := a.webauthn.BeginDiscoverableLogin()
+	if err != nil {
+		return nil, nil, err
+	}
+	return options, sessionData, nil
+}
+
 func (a *AuthService) FinishLogin(user *User, sessionData *webauthn.SessionData, r *http.Request) error {
 	credential, err := a.webauthn.FinishLogin(user, *sessionData, r)
 	if err != nil {

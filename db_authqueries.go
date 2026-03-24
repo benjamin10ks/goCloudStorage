@@ -65,7 +65,7 @@ func saveSession(db *sql.DB, userID int64, sessionToken string, authMethod strin
 		return err
 	}
 	expiresAt := time.Now().Add(24 * time.Hour).Unix()
-	_, err = tx.Exec("INSERT INTO sessions (id, user_id, auth_method,expires_at) VALUES (?, ?, ?)", userID, sessionToken, authMethod, expiresAt)
+	_, err = tx.Exec("INSERT INTO sessions (id, user_id, auth_method,expires_at) VALUES (?, ?, ? ,?)", sessionToken, userID, authMethod, expiresAt)
 	if err != nil {
 		tx.Rollback()
 		return err

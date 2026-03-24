@@ -27,3 +27,12 @@ func getUserByID(db *sql.DB, userID string) (*User, error) {
 	}
 	return &user, nil
 }
+
+func getUserByUsername(db *sql.DB, username string) (*User, error) {
+	var user User
+	err := db.QueryRow("SELECT id, display_name FROM users WHERE username = ?", username).Scan(&user.ID, &user.DisplayName)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

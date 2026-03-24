@@ -79,7 +79,17 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
 }
 
-func (a *App) handlePasskeyBeginLogin(w http.ResponseWriter, r *http.Request)  {}
+func (a *App) handlePasskeyBeginLogin(w http.ResponseWriter, r *http.Request) {
+	options, sessionData, err := a.auth.BeginLoginWitoutUser()
+	if err != nil {
+		http.Error(w, "Failed to begin login", http.StatusInternalServerError)
+		return
+	}
+	saveWebAuthnSession(a.db, "login", 0, sessionData)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(options)
+}
 func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {}
 
 // possibly extend in future to support more providers
