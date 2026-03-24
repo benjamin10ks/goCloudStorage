@@ -11,7 +11,7 @@ type Passkey struct {
 	LastUsedAt   int64  `json:"last_used_at"`
 }
 
-type OAuthAccound struct {
+type OAuthAccount struct {
 	ID             int64  `json:"id"`
 	UserID         int64  `json:"user_id"`
 	Provider       string `json:"provider"`

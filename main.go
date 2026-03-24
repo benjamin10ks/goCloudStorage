@@ -52,10 +52,11 @@ func main() {
 	mux.HandleFunc("POST /auth/logout", app.handleLogout)
 
 	// primary auth routes for passkey and github oauth
-	mux.HandleFunc("POST /auth/passkey/register/begin", app.handlePasskeyBeginRegister)
-	mux.HandleFunc("POST /auth/passkey/register/finish", app.handlePasskeyFinishRegister)
-	mux.HandleFunc("POST /auth/passkey/login/begin", app.handlePasskeyBeginLogin)
-	mux.HandleFunc("POST /auth/passkey/login/finish", app.handlePasskeyFinishLogin)
+	mux.HandleFunc("POST /auth/register/username", app.handleRegisterUsername)
+	mux.HandleFunc("POST /auth/register/passkey/begin/{id}", app.handlePasskeyBeginRegister)
+	mux.HandleFunc("POST /auth/register/passkey/finish/{id}", app.handlePasskeyFinishRegister)
+	mux.HandleFunc("POST /auth/login/passkey/begin/{id}", app.handlePasskeyBeginLogin)
+	mux.HandleFunc("POST /auth/login/passkey/finish/{id}", app.handlePasskeyFinishLogin)
 
 	mux.HandleFunc("POST /auth/github", app.handleGitHubLogin)
 	mux.HandleFunc("GET /auth/github/callback", app.handleGitHubCallback)

@@ -1,0 +1,38 @@
+<!-- passkey_begin.tmpl — this fragment is swapped in by HTMX -->
+<div id="auth-step">
+  <p>Setting up your passkey...</p>
+  <script>
+    (async () => {
+      // Step 1: get challenge from server
+      const beginResp = await fetch(`/auth/register/passkey/begin/{{.UserID}}`, {
+        method: "POST"
+      });
+      const options = await beginResp.json();
+
+      // Step 2: decode challenge — WebAuthn requires ArrayBuffers not base64
+      options.publicKey.challenge = base64ToBuffer(options.publicKey.challenge);
+      options.publicKey.user.id = base64ToBuffer(options.publicKey.user.id);
+
+      // Step 3: trigger device prompt
+      const credential = await navigator.credentials.create(options);
+
+      // Step 4: send result back to server as JSON
+      const finishResp = await fetch(`/auth/register/passkey/finish/{{.UserID}}`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(credential)
+      });
+
+      if (finishResp.ok) {
+        window.location.href = "/home";
+      } else {
+        document.getElementById("auth-step").innerHTML = "<p>Registration failed. Please try again.</p>";
+      }
+    })();
+
+    function base64ToBuffer(base64) {
+      const binary = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+      return Uint8Array.from(binary, c => c.charCodeAt(0)).buffer;
+    }
+  </script>
+</div>
