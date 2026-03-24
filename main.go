@@ -29,8 +29,8 @@ func main() {
 	app := &App{
 		db:      db,
 		tmpl:    template.Must(template.ParseGlob("web/templates/*.tmpl")),
-		auth:    NewAuthService(),
-		storage: NewStorageService(BASE_PATH),
+		auth:    NewAuthService(db),
+		storage: NewStorageService(BASE_PATH, db),
 	}
 
 	mux := http.NewServeMux()
@@ -43,13 +43,22 @@ func main() {
 	})
 
 	// Dashboard routes
-	mux.HandleFunc("/", app.handleLandingPage)
-	mux.HandleFunc("/home", app.handleHomePage)
+	mux.HandleFunc("GET /", app.handleLandingPage)
+	mux.HandleFunc("GET /home", app.handleHomePage)
 
-	// Auth routes
-	mux.HandleFunc("/auth/register", app.handleRegister)
-	mux.HandleFunc("/auth/login", app.handleLogin)
-	mux.HandleFunc("/auth/logout", app.handleLogout)
+	// display login and registration pages
+	mux.HandleFunc("GET /auth/register", app.handleRegister)
+	mux.HandleFunc("GET /auth/login", app.handleLogin)
+	mux.HandleFunc("POST /auth/logout", app.handleLogout)
+
+	// primary auth routes for passkey and github oauth
+	mux.HandleFunc("POST /auth/passkey/register/begin", app.handlePasskeyBeginRegister)
+	mux.HandleFunc("POST /auth/passkey/register/finish", app.handlePasskeyFinishRegister)
+	mux.HandleFunc("POST /auth/passkey/login/begin", app.handlePasskeyBeginLogin)
+	mux.HandleFunc("POST /auth/passkey/login/finish", app.handlePasskeyFinishLogin)
+
+	mux.HandleFunc("POST /auth/github", app.handleGitHubLogin)
+	mux.HandleFunc("GET /auth/github/callback", app.handleGitHubCallback)
 
 	// User routes
 	mux.HandleFunc("GET /api/user/{id}", app.handleUserProfile)

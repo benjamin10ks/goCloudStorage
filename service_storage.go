@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"io"
 	"log"
 	"mime/multipart"
@@ -11,7 +12,7 @@ type StorageService struct {
 	basePath string
 }
 
-func NewStorageService(basePath string) *StorageService {
+func NewStorageService(basePath string, db *sql.DB) *StorageService {
 	return &StorageService{
 		basePath: basePath,
 	}

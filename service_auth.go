@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"log"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 )
@@ -13,16 +14,14 @@ type AuthService struct {
 	db       *sql.DB
 }
 
-func NewAuthService(db *sql.DB) (*AuthService, error) {
+func NewAuthService(db *sql.DB) *AuthService {
 	wauthn, err := webauthn.New(&webauthn.Config{
 		RPDisplayName: "My Cloud Storage",
 		RPID:          "localhost",                       // Adjust when deploying
 		RPOrigins:     []string{"http://localhost:8080"}, // Adjust when deploying
 	})
-	if err != nil {
-		return nil, err
-	}
-	return &AuthService{webauthn: wauthn, db: db}, nil
+	log.Fatalf("Failed to initialize WebAuthn: %v", err)
+	return &AuthService{webauthn: wauthn, db: db}
 }
 
 func (a *AuthService) Register(token string, db *sql.DB) (User, error) {
