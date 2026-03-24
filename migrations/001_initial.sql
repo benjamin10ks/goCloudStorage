@@ -35,7 +35,7 @@ CREATE IF NOT EXISTS TABLE passkeys (
 
 CREATE TABLE IF NOT EXISTS webauthn_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
     type VARCHAR(20) NOT NULL, -- 'registration' or 'login'
     challenge TEXT NOT NULL,
     expires_at TIMESTAMP NOT NULL,

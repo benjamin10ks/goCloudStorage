@@ -1,11 +1,16 @@
 package main
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -58,12 +63,84 @@ func (a *AuthService) BeginLoginWitoutUser() (*protocol.CredentialAssertion, *we
 	return options, sessionData, nil
 }
 
+func (a *AuthService) FinishLoginWithoutUser(r *http.Request, sessionData *webauthn.SessionData) (*User, *webauthn.Credential, error) {
+	parsedResponse, err := protocol.ParseCredentialRequestResponseBody(r.Body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	user, credential, err := a.webauthn.ValidatePasskeyLogin(
+		func(rawID []byte, userHandle []byte) (webauthn.User, error) {
+			return getUserByCredentialID(a.db, rawID)
+		},
+		*sessionData,
+		parsedResponse,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	appUser, ok := user.(*User)
+	if !ok {
+		return nil, nil, fmt.Errorf("unexpected user type returned from webauthn")
+	}
+	return appUser, credential, err
+}
+
 func (a *AuthService) FinishLogin(user *User, sessionData *webauthn.SessionData, r *http.Request) error {
 	credential, err := a.webauthn.FinishLogin(user, *sessionData, r)
 	if err != nil {
 		return err
 	}
 	return updatePasskeySignCount(a.db, user.ID, credential.ID, credential.Authenticator.SignCount)
+}
+
+func verifySignature(secret string, payload []byte, signature string) bool {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(payload)
+	expectedSignature := "sha256=" + hex.EncodeToString(mac.Sum(nil))
+	return hmac.Equal([]byte(expectedSignature), []byte(signature))
+}
+
+func exchangeCodeForToken(code string) (string, error) {
+	reqBody := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&code=%s", GithubClientID, GithubSecret, code))
+
+	req, err := http.NewRequest("POST", "https://github.com/login/oauth/access_token", reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}()
+
+	var result struct {
+		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+		Scope       string `json:"scope"`
+		Error       string `json:"error"`
+		ErrorDesc   string `json:"error_description"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+
+	if result.Error != "" {
+		return "", fmt.Errorf("GitHub OAuth error: %s - %s", result.Error, result.ErrorDesc)
+	}
+
+	return result.AccessToken, nil
 }
 
 func generateToken() string {

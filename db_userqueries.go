@@ -36,3 +36,12 @@ func getUserByUsername(db *sql.DB, username string) (*User, error) {
 	}
 	return &user, nil
 }
+
+func getUserByCredentialID(db *sql.DB, credentialID []byte) (*User, error) {
+	var user User
+	err := db.QueryRow("SELECT u.id, u.username, u.display_name FROM users u JOIN passkeys p ON u.id = p.user_id WHERE p.credential_id = ?", credentialID).Scan(&user.ID, &user.Username, &user.DisplayName)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

@@ -9,12 +9,14 @@ import (
 func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Registration Page - choose Passkey or GitHub"))
 	w.WriteHeader(http.StatusOK)
+	a.tmpl.ExecuteTemplate(w, "register.tmpl", nil)
 }
 
 // display login page with options for passkey and github login
 func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Login Page - choose Passkey or GitHub"))
 	w.WriteHeader(http.StatusOK)
+	a.tmpl.ExecuteTemplate(w, "login.tmpl", nil)
 }
 
 // These use javascript client side to handle passkey flow
@@ -90,11 +92,41 @@ func (a *App) handlePasskeyBeginLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(options)
 }
-func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {}
+
+func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {
+	sessionData, err := getWebAuthnSession(a.db, "login", 0)
+	if err != nil {
+		http.Error(w, "Failed to finish login", http.StatusInternalServerError)
+		return
+	}
+
+	user, credential, err := a.auth.FinishLoginWithoutUser(r, sessionData)
+	if err != nil {
+		http.Error(w, "Failed to finish login", http.StatusInternalServerError)
+		return
+	}
+
+	updatePasskeySignCount(a.db, user.ID, credential.ID, credential.Authenticator.SignCount)
+
+	sessionToken := generateToken()
+	saveSession(a.db, user.ID, sessionToken, "passkey")
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionToken,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.Redirect(w, r, "/home", http.StatusSeeOther)
+}
 
 // possibly extend in future to support more providers
-func (a *App) handleGitHubLogin(w http.ResponseWriter, r *http.Request)    {}
-func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {}
+func (a *App) handleGitHubLogin(w http.ResponseWriter, r *http.Request) {}
+
+func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
+}
 
 // remove session cookie
 func (a *App) handleLogout(w http.ResponseWriter, r *http.Request) {}
