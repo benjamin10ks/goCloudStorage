@@ -4,8 +4,8 @@ Self-hosted cloud storage system written in Go
 
 - [ ] HTMX gui
 
-- [ x ] User authentication # Passkey and Github OAuth with
-  provider strategy support soon
+- [x] User authentication # Passkey and Github OAuth with
+      provider strategy support soon
 
 - [ ] File upload
 
