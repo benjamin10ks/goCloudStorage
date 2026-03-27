@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -51,15 +49,7 @@ func (a *AuthService) FinishRegistration(user *User, sessionData *webauthn.Sessi
 	return savePasskey(a.db, user.ID, credential)
 }
 
-func (a *AuthService) BeginLogin(user *User) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
-	options, sessionData, err := a.webauthn.BeginLogin(user)
-	if err != nil {
-		return nil, nil, err
-	}
-	return options, sessionData, nil
-}
-
-func (a *AuthService) BeginLoginWitoutUser() (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
+func (a *AuthService) BeginLoginWithoutUser() (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
 	options, sessionData, err := a.webauthn.BeginDiscoverableLogin()
 	if err != nil {
 		return nil, nil, err
@@ -89,21 +79,6 @@ func (a *AuthService) FinishLoginWithoutUser(r *http.Request, sessionData *webau
 		return nil, nil, fmt.Errorf("unexpected user type returned from webauthn")
 	}
 	return appUser, credential, err
-}
-
-func (a *AuthService) FinishLogin(user *User, sessionData *webauthn.SessionData, r *http.Request) error {
-	credential, err := a.webauthn.FinishLogin(user, *sessionData, r)
-	if err != nil {
-		return err
-	}
-	return updatePasskeySignCount(a.db, user.ID, credential.ID, credential.Authenticator.SignCount)
-}
-
-func verifySignature(secret string, payload []byte, signature string) bool {
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write(payload)
-	expectedSignature := "sha256=" + hex.EncodeToString(mac.Sum(nil))
-	return hmac.Equal([]byte(expectedSignature), []byte(signature))
 }
 
 func exchangeCodeForToken(ctx context.Context, code string) (string, error) {

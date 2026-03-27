@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -46,18 +47,28 @@ func savePasskey(db *sql.DB, userID int64, credential *webauthn.Credential) erro
 	return nil
 }
 
-func updatePasskeySignCount(db *sql.DB, userID int64, credentialID []byte, signCount uint32) error {
-	tx, err := db.Begin()
+func updatePasskeySignCount(ctx context.Context, db *sql.DB, userID int64, credentialID []byte, newCount uint32) error {
+	if newCount == 0 {
+		return nil
+	}
+
+	var currentCount uint32
+	err := db.QueryRowContext(
+		ctx, "SELECT sign_count FROM passkeys WHERE credential_id = ?", credentialID,
+	).Scan(&currentCount)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec("UPDATE passkeys SET sign_count = ? WHERE user_id = ? AND credential_id = ?", signCount, userID, credentialID)
-	if err != nil {
-		tx.Rollback()
-		return err
+
+	if newCount <= currentCount {
+		return fmt.Errorf("sign count invalid: possible credential clone detected")
 	}
-	tx.Commit()
-	return nil
+
+	_, err = db.ExecContext(
+		ctx, "UPDATE passkeys SET sign_count = ?, last_used_at = CURRENT_TIMESTAMP WHERE credential_id = ?",
+		newCount, credentialID,
+	)
+	return err
 }
 
 func saveSession(db *sql.DB, userID int64, sessionToken string, authMethod string) error {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -9,7 +10,6 @@ import (
 )
 
 type PendingAuth struct {
-	UserID    int64
 	ExpiresAt time.Time
 }
 
@@ -57,7 +57,11 @@ func (a *App) handlePasskeyBeginRegister(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	saveWebAuthnSession(a.db, "registration", user.ID, sessionData)
+	err = saveWebAuthnSession(a.db, "registration", user.ID, sessionData)
+	if err != nil {
+		http.Error(w, "Failed to begin registration", http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(options)
@@ -88,7 +92,11 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
-	saveSession(a.db, user.ID, sessionToken, "passkey")
+	err = saveSession(a.db, user.ID, sessionToken, "passkey")
+	if err != nil {
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
 		Value:    sessionToken,
@@ -101,12 +109,16 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 }
 
 func (a *App) handlePasskeyBeginLogin(w http.ResponseWriter, r *http.Request) {
-	options, sessionData, err := a.auth.BeginLoginWitoutUser()
+	options, sessionData, err := a.auth.BeginLoginWithoutUser()
 	if err != nil {
 		http.Error(w, "Failed to begin login", http.StatusInternalServerError)
 		return
 	}
-	saveWebAuthnSession(a.db, "login", 0, sessionData)
+	err = saveWebAuthnSession(a.db, "login", 0, sessionData)
+	if err != nil {
+		http.Error(w, "Failed to begin login", http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(options)
@@ -125,14 +137,23 @@ func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatePasskeySignCount(a.db, user.ID, credential.ID, credential.Authenticator.SignCount)
+	ctx := r.Context()
+	err = updatePasskeySignCount(ctx, a.db, user.ID, credential.ID, credential.Authenticator.SignCount)
+	if err != nil {
+		http.Error(w, "Failed to update sign count", http.StatusInternalServerError)
+		return
+	}
 
 	sessionToken, err := generateToken()
 	if err != nil {
 		http.Error(w, "Failed to generate session token", http.StatusInternalServerError)
 		return
 	}
-	saveSession(a.db, user.ID, sessionToken, "passkey")
+	err = saveSession(a.db, user.ID, sessionToken, "passkey")
+	if err != nil {
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
@@ -145,8 +166,23 @@ func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
 }
 
-// TODO: possibly extend in future to support more providers
-func (a *App) handleGitHubLogin(w http.ResponseWriter, r *http.Request) {}
+func (a *App) handleGitHubLogin(w http.ResponseWriter, r *http.Request) {
+	stateToken, err := generateToken()
+	if err != nil {
+		http.Error(w, "Failed to generate state token", http.StatusInternalServerError)
+		return
+	}
+
+	pendingAuthsMu.Lock()
+	pendingAuths[stateToken] = PendingAuth{
+		ExpiresAt: time.Now().Add(5 * time.Minute),
+	}
+	pendingAuthsMu.Unlock()
+
+	authURL := fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s&scope=read:user&state=%s", GithubClientID, stateToken)
+
+	http.Redirect(w, r, authURL, http.StatusSeeOther)
+}
 
 func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
@@ -179,19 +215,64 @@ func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	githubUserID, err := getGithubUserID(ctx, accessToken)
+	if err != nil {
+		http.Error(w, "Error fetching GitHub user info", http.StatusInternalServerError)
+		return
+	}
 
-	err = storeGithubToken(ctx, a.db, pending.UserID, githubUserID, accessToken)
+	user, err := getUserByGithubID(ctx, a.db, githubUserID)
+	if err != nil {
+		user, err = createUserFromGithub(ctx, a.db, githubUserID, accessToken)
+		if err != nil {
+			log.Printf("Error creating user with GitHub ID: %v", err)
+			http.Error(w, "Error creating user with GitHub ID", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	err = storeGithubToken(ctx, a.db, user.ID, githubUserID, accessToken)
 	if err != nil {
 		log.Printf("Error storing GitHub token: %v", err)
 		http.Error(w, "Error storing GitHub token", http.StatusInternalServerError)
 		return
 	}
 
+	sessionToken, err := generateToken()
+	if err != nil {
+		http.Error(w, "Failed to generate session token", http.StatusInternalServerError)
+		return
+	}
+	err = saveSession(a.db, user.ID, sessionToken, "github")
+	if err != nil {
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionToken,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
 }
 
 // remove session cookie
 func (a *App) handleLogout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	ctx := r.Context()
+	err = deleteSession(ctx, a.db, cookie.Value)
+	if err != nil {
+		http.Error(w, "Failed to delete session", http.StatusInternalServerError)
+		return
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
 		Value:    "",
@@ -200,9 +281,7 @@ func (a *App) handleLogout(w http.ResponseWriter, r *http.Request) {
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	})
-	ctx := r.Context()
-	// TODO: parse request for token
-	deleteSession(ctx, a.db, "")
+
 	log.Println("User logged out")
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
