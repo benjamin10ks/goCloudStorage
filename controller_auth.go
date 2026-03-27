@@ -41,32 +41,44 @@ func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 // These use javascript client side to handle passkey flow
 func (a *App) handleRegisterUsername(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
-	userID, err := createUser(a.db, username)
+	ctx := r.Context()
+	log.Printf("Attempting to register username: %s", username)
+	userID, err := createUser(ctx, a.db, username)
 	if err != nil {
+		log.Printf("Error creating user: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`<div class="alert alert-error">Username already exists or invalid. Please try another.</div>`))
 		return
 	}
-	a.tmpl["passkey_begin"].ExecuteTemplate(w, "passkey_begin", map[string]any{
+	err = a.tmpl["passkey_begin"].ExecuteTemplate(w, "passkey_begin", map[string]any{
 		"UserID": userID,
 	})
+	if err != nil {
+		log.Printf("Error rendering passkey begin")
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (a *App) handlePasskeyBeginRegister(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("id")
 	user, err := getUserByID(a.db, userID)
 	if err != nil {
+		log.Printf("Error fetching user by ID: %v", err)
 		http.Error(w, "Failed to begin registration", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Beginning passkey registration for user: %s (ID: %d)", user.Username, user.ID)
 	options, sessionData, err := a.auth.BeginRegistration(user)
 	if err != nil {
+		log.Printf("Error beginning passkey registration: %v", err)
 		http.Error(w, "Failed to begin registration", http.StatusInternalServerError)
 		return
 	}
 
 	err = saveWebAuthnSession(a.db, "registration", user.ID, sessionData)
 	if err != nil {
+		log.Printf("Error saving WebAuthn session: %v", err)
 		http.Error(w, "Failed to begin registration", http.StatusInternalServerError)
 		return
 	}
@@ -79,28 +91,33 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 	userID := r.PathValue("id")
 	user, err := getUserByID(a.db, userID)
 	if err != nil {
+		log.Printf("Error fetching user by ID: %v", err)
 		http.Error(w, "Failed to finish registration", http.StatusInternalServerError)
 		return
 	}
 
 	sessionData, err := getWebAuthnSession(a.db, "registration", user.ID)
 	if err != nil {
+		log.Printf("Error fetching WebAuthn session: %v", err)
 		http.Error(w, "Failed to finish registration", http.StatusInternalServerError)
 		return
 	}
 
 	if err := a.auth.FinishRegistration(user, sessionData, r); err != nil {
+		log.Printf("Error finishing passkey registration: %v", err)
 		http.Error(w, "Passkey registration failed", http.StatusInternalServerError)
 		return
 	}
 
 	sessionToken, err := generateToken()
 	if err != nil {
+		log.Printf("Error generating session token: %v", err)
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
 	err = saveSession(a.db, user.ID, sessionToken, "passkey")
 	if err != nil {
+		log.Printf("Error saving session: %v", err)
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
@@ -121,15 +138,17 @@ func (a *App) handlePasskeyBeginLogin(w http.ResponseWriter, r *http.Request) {
 		a.tmpl["login"].ExecuteTemplate(w, "passkey_login", nil)
 		return
 	}
-	
+
 	// For API request, return JSON
 	options, sessionData, err := a.auth.BeginLoginWithoutUser()
 	if err != nil {
+		log.Printf("Error beginning passkey login: %v", err)
 		http.Error(w, "Failed to begin login", http.StatusInternalServerError)
 		return
 	}
 	err = saveWebAuthnSession(a.db, "login", 0, sessionData)
 	if err != nil {
+		log.Printf("Error saving WebAuthn session: %v", err)
 		http.Error(w, "Failed to begin login", http.StatusInternalServerError)
 		return
 	}
@@ -141,12 +160,14 @@ func (a *App) handlePasskeyBeginLogin(w http.ResponseWriter, r *http.Request) {
 func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {
 	sessionData, err := getWebAuthnSession(a.db, "login", 0)
 	if err != nil {
+		log.Printf("Error fetching WebAuthn session: %v", err)
 		http.Error(w, "Failed to finish login", http.StatusInternalServerError)
 		return
 	}
 
 	user, credential, err := a.auth.FinishLoginWithoutUser(r, sessionData)
 	if err != nil {
+		log.Printf("Error finishing passkey login: %v", err)
 		http.Error(w, "Failed to finish login", http.StatusInternalServerError)
 		return
 	}
@@ -154,6 +175,7 @@ func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	err = updatePasskeySignCount(ctx, a.db, user.ID, credential.ID, credential.Authenticator.SignCount)
 	if err != nil {
+		log.Printf("Error updating passkey sign count: %v", err)
 		http.Error(w, "Failed to update sign count", http.StatusInternalServerError)
 		return
 	}
@@ -283,9 +305,11 @@ func (a *App) handleLogout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	err = deleteSession(ctx, a.db, cookie.Value)
 	if err != nil {
+		log.Printf("Error deleting session: %v", err)
 		http.Error(w, "Failed to delete session", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Deleted session for token: %s", cookie.Value)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",

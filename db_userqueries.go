@@ -6,24 +6,23 @@ import (
 	"time"
 )
 
-func createUser(db *sql.DB, username string) (int64, error) {
-	tx, err := db.Begin()
+func createUser(ctx context.Context, db *sql.DB, username string) (int64, error) {
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
 	var userID int64
-	err = tx.QueryRow("INSERT INTO users (username) VALUES (?) RETURNING id", username).Scan(&userID)
+	err = tx.QueryRowContext(ctx, "INSERT INTO users (username) VALUES (?) RETURNING id", username).Scan(&userID)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
 	}
-	tx.Commit()
-	return userID, nil
+	return userID, tx.Commit()
 }
 
 func getUserByID(db *sql.DB, userID string) (*User, error) {
 	var user User
-	err := db.QueryRow("SELECT username, display_name FROM users WHERE id = ?", userID).Scan(&user.Username, &user.DisplayName)
+	err := db.QueryRow("SELECT username FROM users WHERE id = ?", userID).Scan(&user.Username)
 	if err != nil {
 		return nil, err
 	}

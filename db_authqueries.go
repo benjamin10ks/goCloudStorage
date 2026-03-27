@@ -23,7 +23,7 @@ func saveWebAuthnSession(db *sql.DB, reqType string, userID int64, sessionData *
 		return err
 	}
 	expiresAt := time.Now().Add(60 * time.Second).Unix()
-	_, err = tx.Exec("INSERT INTO webauthn_sessions (user_id, auth_method, expires_at) VALUES (?, ?, ? ,?)", userID, reqType, sessionData, expiresAt)
+	_, err = tx.Exec("INSERT INTO webauthn_sessions (user_id, type, challenge, expires_at) VALUES (?, ?, ? ,?)", userID, reqType, sessionData.Challenge, expiresAt)
 	if err != nil {
 		tx.Rollback()
 		return err

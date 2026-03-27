@@ -27,7 +27,7 @@ func loadTemplates() (map[string]*template.Template, error) {
 	authPages := map[string][]string{
 		"login":    append(baseFiles, "web/templates/login.tmpl"),
 		"register": append(baseFiles, "web/templates/register.tmpl"),
-		"passkey_begin": append(baseFiles, "web/templates/passkey_begin.tmpl"),
+		"passkey_begin": {"web/templates/passkey_begin.tmpl"},
 	}
 	
 	// App pages
