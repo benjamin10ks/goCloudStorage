@@ -1,0 +1,24 @@
+{{define "toast"}}
+<div class="alert {{if .Success}}alert-success{{else}}alert-error{{end}}" 
+     style="animation: slideIn 0.3s ease-out;"
+     hx-swap-oob="afterbegin:#toast-container">
+    {{.Message}}
+</div>
+<style>
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+</style>
+<script>
+    setTimeout(() => {
+        document.querySelector('#toast-container > .alert').remove();
+    }, 5000);
+</script>
+{{end}}

@@ -1,33 +1,41 @@
-{{template "layout" .}}
-{{define "title"}}Login{{end}}
+{{define "title"}}Login - Cloud Storage{{end}}
 
-{{define "content"}}
-<style>
-    .form-group { margin-bottom: 1.5rem; }
-    label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-muted); }
-    input[type="email"], input[type="password"] {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        box-sizing: border-box; /* Prevents input from overflowing */
-    }
-</style>
+{{define "auth_content"}}
+<div class="auth-header">
+    <div class="auth-logo">☁️</div>
+    <h1 class="auth-title">Welcome Back</h1>
+    <p class="auth-subtitle">Sign in to access your files</p>
+</div>
 
-<div class="card" style="max-width: 400px; margin: 50px auto;">
-    <h2 style="text-align: center;">Welcome Back</h2>
-    <form method="POST" action="/login">
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" name="email" required placeholder="name@company.com">
-        </div>
+{{if .Error}}
+<div class="alert alert-error">{{.Error}}</div>
+{{end}}
 
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" name="password" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+<div id="auth-form">
+    <!-- Passkey Login -->
+    <button type="button" class="btn btn-passkey" 
+            hx-post="/auth/login/passkey/begin/0" 
+            hx-target="#auth-form"
+            hx-swap="innerHTML">
+        <span>🔐</span>
+        <span>Sign in with Passkey</span>
+        <span class="htmx-indicator spinner"></span>
+    </button>
+    
+    <div class="divider">
+        <span>or continue with</span>
+    </div>
+    
+    <!-- GitHub OAuth -->
+    <form action="/auth/github" method="POST">
+        <button type="submit" class="btn btn-github">
+            <span>🐙</span>
+            <span>Sign in with GitHub</span>
+        </button>
     </form>
+</div>
+
+<div class="auth-link">
+    Don't have an account? <a href="/auth/register">Create one</a>
 </div>
 {{end}}

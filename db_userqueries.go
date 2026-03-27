@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 func createUser(db *sql.DB, username string) (int64, error) {
@@ -102,4 +103,19 @@ func updateUserDisplayName(ctx context.Context, db *sql.DB, userID int64, displa
 		return err
 	}
 	return nil
+}
+
+func getUserBySessionToken(ctx context.Context, db *sql.DB, sessionToken string) (*User, error) {
+	var user User
+	err := db.QueryRowContext(ctx, `
+		SELECT u.id, u.username, u.display_name 
+		FROM users u 
+		JOIN sessions s ON s.user_id = u.id 
+		WHERE s.id = ? AND s.expires_at > ?`,
+		sessionToken, time.Now().Unix(),
+	).Scan(&user.ID, &user.Username, &user.DisplayName)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

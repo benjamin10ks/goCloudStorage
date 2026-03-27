@@ -1,0 +1,54 @@
+{{template "auth_layout" .}}
+{{define "title"}}Register - Cloud Storage{{end}}
+
+{{define "auth_content"}}
+<div class="auth-header">
+    <div class="auth-logo">☁️</div>
+    <h1 class="auth-title">Create Account</h1>
+    <p class="auth-subtitle">Start storing your files securely</p>
+</div>
+
+{{if .Error}}
+<div class="alert alert-error">{{.Error}}</div>
+{{end}}
+
+<div id="auth-form">
+    <!-- Username Registration -->
+    <form hx-post="/auth/register/username" 
+          hx-target="#auth-form" 
+          hx-swap="innerHTML">
+        <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" 
+                   name="username" 
+                   class="form-input" 
+                   placeholder="Choose a username" 
+                   required
+                   minlength="3"
+                   maxlength="30"
+                   pattern="[a-zA-Z0-9_-]+">
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+            <span>Continue</span>
+            <span class="htmx-indicator spinner"></span>
+        </button>
+    </form>
+    
+    <div class="divider">
+        <span>or sign up with</span>
+    </div>
+    
+    <!-- GitHub OAuth -->
+    <form action="/auth/github" method="POST">
+        <button type="submit" class="btn btn-github">
+            <span>🐙</span>
+            <span>Sign up with GitHub</span>
+        </button>
+    </form>
+</div>
+
+<div class="auth-link">
+    Already have an account? <a href="/auth/login">Sign in</a>
+</div>
+{{end}}

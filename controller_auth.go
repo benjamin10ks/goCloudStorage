@@ -20,20 +20,20 @@ var (
 
 // display landing page with login and registration options
 func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	err := a.tmpl["login"].ExecuteTemplate(w, "layout", nil)
+	err := a.tmpl["register"].ExecuteTemplate(w, "auth_layout", nil)
 	if err != nil {
 		log.Printf("Error rendering template: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 }
 
 // display login page with options for passkey and github login
 func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	err := a.tmpl["login"].ExecuteTemplate(w, "layout", nil)
+	err := a.tmpl["login"].ExecuteTemplate(w, "auth_layout", nil)
 	if err != nil {
 		log.Printf("Error rendering template: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -43,11 +43,11 @@ func (a *App) handleRegisterUsername(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	userID, err := createUser(a.db, username)
 	if err != nil {
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
-		a.tmpl["error"].ExecuteTemplate(w, "layout", "Username already exists or invalid")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`<div class="alert alert-error">Username already exists or invalid. Please try another.</div>`))
 		return
 	}
-	a.tmpl["passkey_begin"].ExecuteTemplate(w, "layout", map[string]any{
+	a.tmpl["passkey_begin"].ExecuteTemplate(w, "passkey_begin", map[string]any{
 		"UserID": userID,
 	})
 }
@@ -90,8 +90,7 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := a.auth.FinishRegistration(user, sessionData, r); err != nil {
-		http.Error(w, "Failed to finish registration", http.StatusInternalServerError)
-		a.tmpl["error"].ExecuteTemplate(w, "layout", "Passkey registration failed. Please try again.")
+		http.Error(w, "Passkey registration failed", http.StatusInternalServerError)
 		return
 	}
 
@@ -117,6 +116,13 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 }
 
 func (a *App) handlePasskeyBeginLogin(w http.ResponseWriter, r *http.Request) {
+	// For HTMX request, return the passkey login template
+	if r.Header.Get("HX-Request") == "true" {
+		a.tmpl["login"].ExecuteTemplate(w, "passkey_login", nil)
+		return
+	}
+	
+	// For API request, return JSON
 	options, sessionData, err := a.auth.BeginLoginWithoutUser()
 	if err != nil {
 		http.Error(w, "Failed to begin login", http.StatusInternalServerError)
@@ -291,5 +297,5 @@ func (a *App) handleLogout(w http.ResponseWriter, r *http.Request) {
 	})
 
 	log.Println("User logged out")
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 }

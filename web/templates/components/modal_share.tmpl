@@ -1,14 +1,45 @@
 {{define "modal_share"}}
-<div id="shareModal" class="modal" onclick="closeModal('shareModal')">
+<div class="modal-overlay" id="share-modal" onclick="this.remove()">
     <div class="modal-content" onclick="event.stopPropagation()">
-        <h3>Share File</h3>
+        <div class="modal-header">
+            <h2 class="modal-title">Share File</h2>
+            <button class="close-btn" onclick="document.getElementById('share-modal').remove()">×</button>
+        </div>
 
-        <p>(Coming soon)</p>
+        <p style="margin-bottom: 1.5rem;">Share <strong>{{.FileName}}</strong> with others</p>
 
-        <input type="email" placeholder="user@example.com" disabled>
+        <form hx-post="/api/files/{{.FileID}}/share" 
+              hx-target="#share-result"
+              hx-swap="innerHTML">
+            <div class="form-group">
+                <label class="form-label">Username or Email</label>
+                <input type="text" 
+                       name="recipient" 
+                       class="form-input" 
+                       placeholder="Enter username"
+                       required>
+            </div>
 
-        <button disabled>Share</button>
-        <button onclick="closeModal('shareModal')">Close</button>
+            <div class="form-group">
+                <label class="form-label">Permissions</label>
+                <select name="permissions" class="form-input">
+                    <option value="view">View only</option>
+                    <option value="download">Can download</option>
+                </select>
+            </div>
+
+            <div id="share-result"></div>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('share-modal').remove()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Share
+                    <span class="htmx-indicator spinner"></span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {{end}}

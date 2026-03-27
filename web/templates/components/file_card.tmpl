@@ -1,9 +1,39 @@
 {{define "file_card"}}
-<div class="card">
-    <strong>{{.Name}}</strong>
-    <p>{{.Size}} KB</p>
-
-    <button onclick="openModal('fileInfoModal')">Info</button>
-    <button onclick="openModal('shareModal')">Share</button>
+<div class="file-card" id="file-{{.ID}}">
+    <div class="file-icon">
+        {{if eq .Type "image"}}🖼️
+        {{else if eq .Type "video"}}🎥
+        {{else if eq .Type "audio"}}🎵
+        {{else if eq .Type "pdf"}}📄
+        {{else if eq .Type "zip"}}📦
+        {{else}}📄{{end}}
+    </div>
+    
+    <div class="file-name" title="{{.Name}}">{{.Name}}</div>
+    <div class="file-meta">{{.SizeFormatted}}</div>
+    <div class="file-meta">{{.CreatedAt}}</div>
+    
+    <div class="file-actions">
+        <button class="btn btn-secondary btn-icon" 
+                hx-get="/api/files/{{.ID}}/download"
+                title="Download">
+            ⬇️
+        </button>
+        <button class="btn btn-secondary btn-icon"
+                hx-get="/api/files/{{.ID}}/share-modal"
+                hx-target="#modal-container"
+                hx-swap="innerHTML"
+                title="Share">
+            🔗
+        </button>
+        <button class="btn btn-danger btn-icon"
+                hx-delete="/api/delete/{{.ID}}"
+                hx-confirm="Are you sure you want to delete this file?"
+                hx-target="#file-{{.ID}}"
+                hx-swap="outerHTML swap:1s"
+                title="Delete">
+            🗑️
+        </button>
+    </div>
 </div>
 {{end}}

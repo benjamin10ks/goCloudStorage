@@ -1,25 +1,26 @@
+{{template "app_layout" .}}
+{{define "title"}}Dashboard - Cloud Storage{{end}}
 
-{{define "title"}}Dash{{end}}
-
-{{define "content"}}
-<h2>Login</h2>
-
-<form method="POST" action="/login">
-    <div>
-        <label>Email</label><br>
-        <input type="email" name="email" required>
+{{define "main_content"}}
+<div id="files-container">
+    {{if .Files}}
+    <div class="grid">
+        {{range .Files}}
+        {{template "file_card" .}}
+        {{end}}
     </div>
-
-    <div>
-        <label>Password</label><br>
-        <input type="password" name="password" required>
+    {{else}}
+    <div class="empty-state">
+        <div class="empty-state-icon">📁</div>
+        <h2 class="empty-state-title">No files yet</h2>
+        <p>Upload your first file to get started</p>
+        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="document.getElementById('upload-input').click()">
+            <span>⬆️</span> Upload File
+        </button>
     </div>
+    {{end}}
+</div>
 
-    <button type="submit">Login</button>
-</form>
-
-<p>
-    Don’t have an account?
-    <a href="/signup">Create one</a>
-</p>
+<!-- File modals loaded via HTMX -->
+<div id="modal-container"></div>
 {{end}}
