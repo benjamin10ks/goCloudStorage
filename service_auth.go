@@ -29,7 +29,9 @@ func NewAuthService(db *sql.DB) *AuthService {
 		RPID:          "localhost",                       // Adjust when deploying
 		RPOrigins:     []string{"http://localhost:8080"}, // Adjust when deploying
 	})
-	log.Fatalf("Failed to initialize WebAuthn: %v", err)
+	if err != nil {
+		log.Fatalf("Failed to initialize WebAuthn: %v", err)
+	}
 	return &AuthService{webauthn: wauthn, db: db}
 }
 
@@ -168,11 +170,11 @@ func getGithubUserID(ctx context.Context, accessToken string) (string, error) {
 	return strconv.FormatInt(user.ID, 10), nil
 }
 
-func generateToken() string {
+func generateToken() (string, error) {
 	bytes := make([]byte, 16)
 
 	if _, err := rand.Read(bytes); err != nil {
-		return ""
+		return "", fmt.Errorf("failed to generate random token: %w", err)
 	}
-	return hex.EncodeToString(bytes)
+	return hex.EncodeToString(bytes), nil
 }

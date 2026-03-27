@@ -83,7 +83,11 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	sessionToken := generateToken()
+	sessionToken, err := generateToken()
+	if err != nil {
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
 	saveSession(a.db, user.ID, sessionToken, "passkey")
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
@@ -123,7 +127,11 @@ func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {
 
 	updatePasskeySignCount(a.db, user.ID, credential.ID, credential.Authenticator.SignCount)
 
-	sessionToken := generateToken()
+	sessionToken, err := generateToken()
+	if err != nil {
+		http.Error(w, "Failed to generate session token", http.StatusInternalServerError)
+		return
+	}
 	saveSession(a.db, user.ID, sessionToken, "passkey")
 
 	http.SetCookie(w, &http.Cookie{
