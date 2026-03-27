@@ -81,6 +81,16 @@ func (a *AuthService) FinishLoginWithoutUser(r *http.Request, sessionData *webau
 	return appUser, credential, err
 }
 
+func (a *AuthService) IsAuthenticated(r *http.Request) bool {
+	_, err := r.Cookie("session_id")
+	if err != nil {
+		log.Printf("No session cookie found: %v", err)
+		return false
+	} else {
+		return true
+	}
+}
+
 func exchangeCodeForToken(ctx context.Context, code string) (string, error) {
 	reqBody := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&code=%s", GithubClientID, GithubSecret, code))
 

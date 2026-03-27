@@ -21,13 +21,21 @@ var (
 // display landing page with login and registration options
 func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	a.tmpl.ExecuteTemplate(w, "register.tmpl", nil)
+	err := a.tmpl["login"].ExecuteTemplate(w, "layout", nil)
+	if err != nil {
+		log.Printf("Error rendering template: %v", err)
+		return
+	}
 }
 
 // display login page with options for passkey and github login
 func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	a.tmpl.ExecuteTemplate(w, "login.tmpl", nil)
+	err := a.tmpl["login"].ExecuteTemplate(w, "layout", nil)
+	if err != nil {
+		log.Printf("Error rendering template: %v", err)
+		return
+	}
 }
 
 // These use javascript client side to handle passkey flow
@@ -36,10 +44,10 @@ func (a *App) handleRegisterUsername(w http.ResponseWriter, r *http.Request) {
 	userID, err := createUser(a.db, username)
 	if err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
-		a.tmpl.ExecuteTemplate(w, "error.tmpl", "Username already exists or invalid")
+		a.tmpl["error"].ExecuteTemplate(w, "layout", "Username already exists or invalid")
 		return
 	}
-	a.tmpl.ExecuteTemplate(w, "passkey_begin.tmpl", map[string]any{
+	a.tmpl["passkey_begin"].ExecuteTemplate(w, "layout", map[string]any{
 		"UserID": userID,
 	})
 }
@@ -83,7 +91,7 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 
 	if err := a.auth.FinishRegistration(user, sessionData, r); err != nil {
 		http.Error(w, "Failed to finish registration", http.StatusInternalServerError)
-		a.tmpl.ExecuteTemplate(w, "error.tmpl", "Passkey registration failed. Please try again.")
+		a.tmpl["error"].ExecuteTemplate(w, "layout", "Passkey registration failed. Please try again.")
 		return
 	}
 

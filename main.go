@@ -9,7 +9,7 @@ import (
 
 type App struct {
 	db      *sql.DB
-	tmpl    *template.Template
+	tmpl    map[string]*template.Template
 	auth    *AuthService
 	storage *StorageService
 }
@@ -26,9 +26,14 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
+	templates, err := loadTemplates()
+	if err != nil {
+		log.Fatalf("Failed to load templates: %v", err)
+	}
+
 	app := &App{
 		db:      db,
-		tmpl:    template.Must(template.ParseGlob("web/templates/*.tmpl")),
+		tmpl:    templates,
 		auth:    NewAuthService(db),
 		storage: NewStorageService(BASE_PATH, db),
 	}
@@ -36,7 +41,7 @@ func main() {
 	mux := http.NewServeMux()
 	server := newServer(mux)
 
-	mux.HandleFunc("/api/healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK!"))

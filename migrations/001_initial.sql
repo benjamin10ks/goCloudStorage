@@ -3,8 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     display_name VARCHAR(100),
     storage_quota BIGINT DEFAULT 1073741824, -- Default 1GB
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS oauth_accounts (
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS oauth_accounts (
   UNIQUE (provider, provider_user_id)
 );
 
-CREATE IF NOT EXISTS TABLE passkeys (
+CREATE TABLE IF NOT EXISTS passkeys (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   credential_id BLOB NOT NULL UNIQUE,
@@ -44,10 +44,10 @@ CREATE TABLE IF NOT EXISTS webauthn_sessions (
 
 CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
-    user_id INT REFERENCES NOT NULL users (id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     auth_method VARCHAR(20) NOT NULL, -- 'oauth', 'passkey'
     expires_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS files (
@@ -57,10 +57,9 @@ CREATE TABLE IF NOT EXISTS files (
     filepath VARCHAR(500) NOT NULL,
     filesize BIGINT NOT NULL,
     mime_type VARCHAR(100),
-    uploaded_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-
-)
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE IF NOT EXISTS shares (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +67,7 @@ CREATE TABLE IF NOT EXISTS shares (
     shared_by INTEGER REFERENCES users (id) ON DELETE CASCADE,
     shared_with INTEGER REFERENCES users (id) ON DELETE CASCADE,
     permission VARCHAR(10) DEFAULT 'read', -- 'read' or 'write'
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_files_user_id ON files (user_id);
