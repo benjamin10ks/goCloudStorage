@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -10,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -102,10 +104,10 @@ func verifySignature(secret string, payload []byte, signature string) bool {
 	return hmac.Equal([]byte(expectedSignature), []byte(signature))
 }
 
-func exchangeCodeForToken(code string) (string, error) {
+func exchangeCodeForToken(ctx context.Context, code string) (string, error) {
 	reqBody := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&code=%s", GithubClientID, GithubSecret, code))
 
-	req, err := http.NewRequest("POST", "https://github.com/login/oauth/access_token", reqBody)
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://github.com/login/oauth/access_token", reqBody)
 	if err != nil {
 		return "", err
 	}
@@ -141,6 +143,29 @@ func exchangeCodeForToken(code string) (string, error) {
 	}
 
 	return result.AccessToken, nil
+}
+
+func getGithubUserID(ctx context.Context, accessToken string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/user", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var user struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return "", err
+	}
+	return strconv.FormatInt(user.ID, 10), nil
 }
 
 func generateToken() string {

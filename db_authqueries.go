@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -72,4 +73,39 @@ func saveSession(db *sql.DB, userID int64, sessionToken string, authMethod strin
 	}
 	tx.Commit()
 	return nil
+}
+
+func deleteSession(ctx context.Context, db *sql.DB, sessionToken string) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM sessions WHERE id = ?", sessionToken)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func storeGithubToken(ctx context.Context, db *sql.DB, userID int64, githubUserID, token string) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO oauth_accounts (user_id, provider, provider_user_id, access_token)
+		VALUES (?, 'github', ?, ?)
+		ON CONFLICT (provider, provider_user_id)
+		DO UPDATE SET access_token = excluded.access_token`,
+		userID, userID, token,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
