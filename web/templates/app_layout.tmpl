@@ -320,8 +320,8 @@ body {
     
     <div class="user-section">
         <div class="user-info">
-            <div class="user-avatar" style="text-transform: uppercase;">{{if .User}}{{slice .User.Username 0 1}}{{else}}U{{end}}</div>
-            <div class="user-name">{{if .User}}{{.User.Username}}{{else}}User{{end}}</div>
+            <div class="user-avatar" style="text-transform: uppercase;">{{if .User}}{{slice .User.DisplayName 0 1}}{{else}}U{{end}}</div>
+            <div class="user-name">{{if .User}}{{.User.DisplayName}}{{else}}User{{end}}</div>
         </div>
         <form action="/auth/logout" method="POST">
             <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">

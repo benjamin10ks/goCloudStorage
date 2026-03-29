@@ -15,6 +15,10 @@ type App struct {
 }
 
 func main() {
+	if GithubClientID == "" || GithubSecret == "" {
+		log.Fatal("GitHub OAuth credentials are not set. Please set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET environment variables.")
+	}
+
 	db, err := sql.Open("sqlite", "./cloud.db")
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)

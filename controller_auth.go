@@ -238,11 +238,13 @@ func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 	pendingAuthsMu.Unlock()
 
 	if !ok {
+		log.Printf("Invalid state parameter: %s", state)
 		http.Error(w, "Invalid state parameter", http.StatusBadRequest)
 		return
 	}
 
 	if time.Now().After(pending.ExpiresAt) {
+		log.Printf("State parameter expired: %s", state)
 		http.Error(w, "Expired state parameter", http.StatusBadRequest)
 		return
 	}
@@ -258,6 +260,7 @@ func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 
 	githubUserID, err := getGithubUserID(ctx, accessToken)
 	if err != nil {
+		log.Printf("Error fetching GitHub user info: %v", err)
 		http.Error(w, "Error fetching GitHub user info", http.StatusInternalServerError)
 		return
 	}
