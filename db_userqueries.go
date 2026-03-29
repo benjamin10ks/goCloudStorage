@@ -69,7 +69,9 @@ func createUserFromGithub(ctx context.Context, db *sql.DB, githubUserID, accessT
 	}
 	defer tx.Rollback()
 
-	result, err := tx.ExecContext(ctx, `INSERT INTO users (username) VALUES (?)`, "github_"+githubUserID)
+	tempUsername := "github_" + githubUserID
+
+	result, err := tx.ExecContext(ctx, `INSERT INTO users (username, display_name) VALUES (?, ?)`, tempUsername, tempUsername)
 	if err != nil {
 		return nil, err
 	}

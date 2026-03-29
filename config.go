@@ -5,9 +5,10 @@ import (
 	"os"
 )
 
+const BASE_PATH = "./storage/users/"
+
 // IMPORTANT CONSTANTS
 var (
-	BASE_PATH      = "./storage/users/"
 	GithubClientID = os.Getenv("GITHUB_CLIENT_ID")
 	GithubSecret   = os.Getenv("GITHUB_CLIENT_SECRET")
 )

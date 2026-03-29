@@ -127,6 +127,9 @@ func (a *App) handlePasskeyFinishRegister(w http.ResponseWriter, r *http.Request
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		MaxAge:   86400,
 	})
 
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
@@ -197,6 +200,9 @@ func (a *App) handlePasskeyFinishLogin(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		MaxAge:   86400,
 	})
 
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
@@ -289,6 +295,9 @@ func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		MaxAge:   86400,
 	})
 
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
