@@ -18,7 +18,7 @@ func NewStorageService(basePath string, db *sql.DB) *StorageService {
 	}
 }
 
-func (s *StorageService) UploadFile(userID int, file multipart.File, header *multipart.FileHeader) (string, error) {
+func (s *StorageService) UploadFile(userID int64, file multipart.File, header *multipart.FileHeader) (string, error) {
 	return "", nil
 }
 
