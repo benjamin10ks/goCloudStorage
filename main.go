@@ -53,7 +53,7 @@ func main() {
 
 	// Dashboard routes
 	mux.HandleFunc("GET /", app.handleLandingPage)
-	mux.HandleFunc("GET /home", app.handleHomePage)
+	mux.HandleFunc("GET /home", app.requireAuth(app.handleHomePage))
 
 	// display login and registration pages
 	mux.HandleFunc("GET /auth/register", app.handleRegister)
@@ -72,15 +72,15 @@ func main() {
 
 	// User routes
 	mux.HandleFunc("GET /api/user/{id}", app.handleUserProfile)
-	mux.HandleFunc("PUT /api/user/{id}", app.handleUpdateUser)
-	mux.HandleFunc("DELETE /api/user/{id}", app.handleDeleteUser)
-	mux.HandleFunc("GET /api/user/{id}/files", app.handleListUserFiles)
+	mux.HandleFunc("PUT /api/user/{id}", app.requireAuth(app.handleUpdateUser))
+	mux.HandleFunc("DELETE /api/user/{id}", app.requireAuth(app.handleDeleteUser))
+	mux.HandleFunc("GET /api/user/{id}/files", app.requireAuth(app.handleListUserFiles))
 
 	// File routes
-	mux.HandleFunc("POST /api/upload", app.handleUpload)
-	mux.HandleFunc("GET /api/files/{id}/download", app.handleDownload)
-	mux.HandleFunc("DELETE /api/delete/{id}", app.handleDeleteFile)
-	mux.HandleFunc("POST /api/files/{id}/share", app.handleShareFile)
+	mux.HandleFunc("POST /api/upload", app.requireAuth(app.handleUpload))
+	mux.HandleFunc("GET /api/files/{id}/download", app.requireAuth(app.handleDownload))
+	mux.HandleFunc("DELETE /api/delete/{id}", app.requireAuth(app.handleDeleteFile))
+	mux.HandleFunc("POST /api/files/{id}/share", app.requireAuth(app.handleShareFile))
 
 	log.Printf("Starting server on %s", server.Addr)
 	if err := server.ListenAndServe(); err != nil {

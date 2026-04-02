@@ -9,24 +9,18 @@ func (a *App) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
-	NewDiplayName := r.FormValue("display_name")
-	sessionToken, err := r.Cookie("session_id")
-	if err != nil {
-		log.Printf("Error retrieving session cookie: %v", err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	user, ok := userFromContext(r.Context())
+	if !ok {
+		log.Printf("User not found in context")
+		http.Error(w, "Unauthorized: user not found in context", http.StatusUnauthorized)
 		return
 	}
+
+	NewDiplayName := r.FormValue("display_name")
 
 	ctx := r.Context()
 
-	user, err := getUserBySessionToken(ctx, a.db, sessionToken.Value)
-	if err != nil {
-		log.Printf("Error getting user from session: %v", err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	err = updateUserDisplayName(ctx, a.db, user.ID, NewDiplayName)
+	err := updateUserDisplayName(ctx, a.db, user.ID, NewDiplayName)
 	if err != nil {
 		log.Printf("Error updating display name: %v", err)
 		http.Error(w, "Failed to update display name", http.StatusInternalServerError)
