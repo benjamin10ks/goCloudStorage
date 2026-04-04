@@ -8,7 +8,7 @@ import (
 
 type contextKey string
 
-const contextKeyUser = "user"
+const contextKeyUser contextKey = "user"
 
 func (a *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

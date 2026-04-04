@@ -70,7 +70,15 @@ func (s *StorageService) DeleteFile(path string) error {
 	return nil
 }
 
-func (s *StorageService) getFileType(file *multipart.File) string {
+func (s *StorageService) GetFile(path string) (*File, error) {
+	return nil, nil
+}
+
+func (s *StorageService) GetAllUserFiles(userID int64) (*[]File, error) {
+	return nil, nil
+}
+
+func getFileType(file *multipart.File) string {
 	fileBytes, err := io.ReadAll(*file)
 	if err != nil {
 		log.Printf("Failed to read file for type detection: %v", err)

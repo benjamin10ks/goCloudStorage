@@ -223,6 +223,8 @@ func (a *App) handleGitHubLogin(w http.ResponseWriter, r *http.Request) {
 
 	authURL := fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s&scope=read:user&state=%s", GithubClientID, stateToken)
 
+	log.Printf("Redirecting to GitHub OAuth with state: %s", stateToken)
+
 	http.Redirect(w, r, authURL, http.StatusSeeOther)
 }
 
@@ -284,11 +286,13 @@ func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 
 	sessionToken, err := generateToken()
 	if err != nil {
+		log.Printf("Error generating session token: %v", err)
 		http.Error(w, "Failed to generate session token", http.StatusInternalServerError)
 		return
 	}
 	err = saveSession(a.db, user.ID, sessionToken, "github")
 	if err != nil {
+		log.Printf("Error saving session: %v", err)
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
@@ -297,11 +301,13 @@ func (a *App) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionToken,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		MaxAge:   86400,
 	})
+
+	log.Printf("User logged in with GitHub ID: %s", githubUserID)
 
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
 }

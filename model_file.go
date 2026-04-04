@@ -4,10 +4,10 @@ import "time"
 
 type File struct {
 	ID           int          `json:"id"`
-	Title        string       `json:"title"`
+	FileName     string       `json:"filename"`
+	FilePath     string       `json:"filepath"`
 	Type         string       `json:"type"`
 	Size         int64        `json:"size"`
-	StoragePath  string       `json:"storage_path"`
 	FileMetadata FileMetadata `json:"metadata"`
 }
 
