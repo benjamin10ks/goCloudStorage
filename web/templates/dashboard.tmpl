@@ -4,13 +4,14 @@
 {{define "main_content"}}
 <div id="files-container">
     {{if .Files}}
-    <div class="grid">
+    <div class="grid" id="files-grid">
         {{range .Files}}
         {{template "file_card" .}}
         {{end}}
     </div>
     {{else}}
-    <div class="empty-state">
+    <div class="grid" id="files-grid" style="display: none;"></div>
+    <div class="empty-state" id="empty-state">
         <div class="empty-state-icon">📁</div>
         <h2 class="empty-state-title">No files yet</h2>
         <p>Upload your first file to get started</p>
@@ -21,6 +22,50 @@
     {{end}}
 </div>
 
+<!-- Hidden upload form -->
+<form id="upload-form" style="display: none;">
+    <input type="file" 
+           id="upload-input" 
+           name="file"
+           hx-post="/api/upload"
+           hx-encoding="multipart/form-data"
+           hx-target="#files-grid"
+           hx-swap="afterbegin">
+</form>
+
 <!-- File modals loaded via HTMX -->
 <div id="modal-container"></div>
+
+<script>
+document.body.addEventListener('showToast', function(evt) {
+    const detail = evt.detail.value;
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + detail.type;
+    toast.textContent = detail.message;
+    toast.style.cssText = 'padding: 1rem 1.5rem; background: ' + 
+        (detail.type === 'success' ? 'var(--success)' : 'var(--danger)') + 
+        '; color: white; border-radius: 8px; margin-bottom: 0.5rem; box-shadow: var(--shadow);';
+    
+    const container = document.getElementById('toast-container');
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+});
+
+document.body.addEventListener('fileUploaded', function() {
+    const emptyState = document.getElementById('empty-state');
+    const filesGrid = document.getElementById('files-grid');
+    
+    if (emptyState && filesGrid) {
+        emptyState.style.display = 'none';
+        filesGrid.style.display = 'grid';
+    }
+    
+    document.getElementById('upload-input').value = '';
+});
+</script>
 {{end}}

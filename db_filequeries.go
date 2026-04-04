@@ -6,16 +6,29 @@ import (
 	"log"
 )
 
-func savePathToDB(ctx context.Context, db *sql.DB, userID int64, filename string, path string) error {
+func savePathToDB(ctx context.Context, db *sql.DB, userID int64, filename string, path string) (int64, error) {
+	return saveFileWithSize(ctx, db, userID, filename, path, 0)
+}
+
+func saveFileWithSize(ctx context.Context, db *sql.DB, userID int64, filename string, path string, size int64) (int64, error) {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	_, err = tx.ExecContext(ctx, "INSERT INTO files (user_id, filename, path) VALUES (?, ?, ?)", userID, filename, path)
+	result, err := tx.ExecContext(ctx, "INSERT INTO files (user_id, filename, filepath, size, type) VALUES (?, ?, ?, ?, '')", userID, filename, path, size)
 	if err != nil {
-		return err
+		tx.Rollback()
+		return 0, err
 	}
-	return tx.Commit()
+	fileID, err := result.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return fileID, nil
 }
 
 func getUserFiles(ctx context.Context, db *sql.DB, userID int64) ([]File, error) {
@@ -23,7 +36,9 @@ func getUserFiles(ctx context.Context, db *sql.DB, userID int64) ([]File, error)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.QueryContext(ctx, "SELECT filename, type, size, updated_at FROM files WHERE user_id = ?", userID)
+	defer tx.Rollback()
+	
+	rows, err := tx.QueryContext(ctx, "SELECT id, filename, filepath, type, size, created_at FROM files WHERE user_id = ? ORDER BY created_at DESC", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +53,15 @@ func getUserFiles(ctx context.Context, db *sql.DB, userID int64) ([]File, error)
 	var files []File
 	for rows.Next() {
 		var file File
-		if err := rows.Scan(&file.FileName, &file.Type, &file.Size, &file.FileMetadata); err != nil {
+		if err := rows.Scan(&file.ID, &file.FileName, &file.FilePath, &file.Type, &file.Size, &file.FileMetadata.CreatedAt); err != nil {
 			log.Printf("Error scanning file row: %v", err)
 			continue
 		}
 		files = append(files, file)
+	}
+	
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
 	return files, nil
 }
