@@ -30,7 +30,7 @@ func (a *App) handleUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	path, err := a.storage.UploadFile(user.ID, file, header)
+	path, err := a.storage.UploadMultipartFile(user.ID, file, header)
 	if err != nil {
 		http.Error(w, "Failed to upload file", http.StatusInternalServerError)
 		log.Printf("File upload failed: %v", err)
@@ -43,6 +43,12 @@ func (a *App) handleUpload(w http.ResponseWriter, r *http.Request) {
 	err = savePathToDB(ctx, a.db, user.ID, header.Filename, path)
 	if err != nil {
 		log.Printf("Failed to save file path to DB: %v", err)
+		err = a.storage.DeleteFile(path)
+		if err != nil {
+			log.Printf("Failed to delete file after DB save failure: %v", err)
+			http.Error(w, "Failed to save file metadata and cleanup file", http.StatusInternalServerError)
+			return
+		}
 		http.Error(w, "Failed to save file metadata", http.StatusInternalServerError)
 		return
 	}
