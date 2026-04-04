@@ -42,6 +42,7 @@ func main() {
 		storage: NewStorageService(BASE_PATH, db),
 	}
 
+	app.db.SetMaxOpenConns(1)
 	mux := http.NewServeMux()
 	server := newServer(mux)
 
@@ -77,9 +78,9 @@ func main() {
 	mux.HandleFunc("GET /api/user/{id}/files", app.requireAuth(app.handleListUserFiles))
 
 	// File routes
-	mux.HandleFunc("POST /api/upload", app.requireAuth(app.handleUpload))
+	mux.HandleFunc("POST /api/files/upload", app.requireAuth(app.handleUpload))
 	mux.HandleFunc("GET /api/files/{id}/download", app.requireAuth(app.handleDownload))
-	mux.HandleFunc("DELETE /api/delete/{id}", app.requireAuth(app.handleDeleteFile))
+	mux.HandleFunc("DELETE /api/files/delete/{id}", app.requireAuth(app.handleDeleteFile))
 	mux.HandleFunc("POST /api/files/{id}/share", app.requireAuth(app.handleShareFile))
 
 	log.Printf("Starting server on %s", server.Addr)

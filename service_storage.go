@@ -67,6 +67,10 @@ func (s *StorageService) UploadMultipartFile(userID int64, file multipart.File, 
 }
 
 func (s *StorageService) DeleteFile(path string) error {
+	err := os.Remove(path)
+	if err != nil {
+		return fmt.Errorf("failed to delete file: %w", err)
+	}
 	return nil
 }
 
@@ -95,7 +99,7 @@ func deduplicatePath(path string) string {
 	nameWithoutExt := strings.TrimSuffix(path, ext)
 
 	for i := 1; ; i++ {
-		candidate := fmt.Sprintf("%s (%d)%s", nameWithoutExt, i, ext)
+		candidate := fmt.Sprintf("%s(%d)%s", nameWithoutExt, i, ext)
 		if _, err := os.Stat(candidate); os.IsNotExist(err) {
 			return candidate
 		}

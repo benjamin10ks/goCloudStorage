@@ -63,7 +63,7 @@ func (a *App) handleUpload(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	uploadedFile := &File{
-		ID:       int(fileID),
+		ID:       fileID,
 		FileName: header.Filename,
 		FilePath: path,
 		Size:     header.Size,
@@ -83,6 +83,43 @@ func (a *App) handleDownload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleDeleteFile(w http.ResponseWriter, r *http.Request) {
+	user, ok := userFromContext(r.Context())
+	if !ok {
+		log.Printf("User not found in context")
+		http.Error(w, "Unauthorized: user not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	fileID := r.PathValue("id")
+
+	ctx := r.Context()
+
+	filepath, err := getFilepathByID(ctx, a.db, user.ID, fileID)
+	if err != nil {
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to retrieve file path for deletion", "type": "error"}}`)
+		log.Printf("Failed to retrieve file path for deletion: %v", err)
+		http.Error(w, "Failed to retrieve file path for deletion", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Retrieved file path for deletion: %s", filepath)
+
+	err = deleteFileByID(ctx, a.db, user.ID, fileID)
+	if err != nil {
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete file metadata", "type": "error"}}`)
+		log.Printf("Failed to delete file metadata: %v", err)
+		http.Error(w, "Failed to delete file metadata", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Deleted file metadata for file ID %s", fileID)
+
+	err = a.storage.DeleteFile(filepath)
+	if err != nil {
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete file", "type": "error"}}`)
+		log.Printf("Failed to delete file: %v", err)
+		http.Error(w, "Failed to delete file", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Deleted file from storage: %s", filepath)
 }
 
 func (a *App) handleShareFile(w http.ResponseWriter, r *http.Request) {

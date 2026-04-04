@@ -37,7 +37,7 @@ func getUserFiles(ctx context.Context, db *sql.DB, userID int64) ([]File, error)
 		return nil, err
 	}
 	defer tx.Rollback()
-	
+
 	rows, err := tx.QueryContext(ctx, "SELECT id, filename, filepath, type, size, created_at FROM files WHERE user_id = ? ORDER BY created_at DESC", userID)
 	if err != nil {
 		return nil, err
@@ -59,9 +59,58 @@ func getUserFiles(ctx context.Context, db *sql.DB, userID int64) ([]File, error)
 		}
 		files = append(files, file)
 	}
-	
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return files, nil
+}
+
+func getFilepathByID(ctx context.Context, db *sql.DB, userID int64, fileID string) (string, error) {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
+	var filepath string
+	err = tx.QueryRowContext(ctx, "SELECT filepath FROM files WHERE id = ? AND user_id = ?", fileID, userID).Scan(&filepath)
+	if err != nil {
+		return "", err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "", err
+	}
+	return filepath, nil
+}
+
+func deleteFileByID(ctx context.Context, db *sql.DB, userID int64, fileID string) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM files WHERE id = ? AND user_id = ?", fileID, userID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func deleteFileByPath(ctx context.Context, db *sql.DB, path string) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM files WHERE filepath = ?", path)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
