@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (a *App) handleUpload(w http.ResponseWriter, r *http.Request) {
+func (a *App) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	user, ok := userFromContext(r.Context())
 	if !ok {
 		log.Printf("User not found in context")
@@ -79,7 +79,7 @@ func (a *App) handleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *App) handleDownload(w http.ResponseWriter, r *http.Request) {
+func (a *App) handleDownloadFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleDeleteFile(w http.ResponseWriter, r *http.Request) {

@@ -78,8 +78,8 @@ func main() {
 	mux.HandleFunc("GET /api/user/{id}/files", app.requireAuth(app.handleListUserFiles))
 
 	// File routes
-	mux.HandleFunc("POST /api/files/upload", app.requireAuth(app.handleUpload))
-	mux.HandleFunc("GET /api/files/{id}/download", app.requireAuth(app.handleDownload))
+	mux.HandleFunc("POST /api/files/upload", app.requireAuth(app.handleUploadFile))
+	mux.HandleFunc("GET /api/files/{id}/download", app.requireAuth(app.handleDownloadFile))
 	mux.HandleFunc("DELETE /api/files/delete/{id}", app.requireAuth(app.handleDeleteFile))
 	mux.HandleFunc("POST /api/files/{id}/share", app.requireAuth(app.handleShareFile))
 
