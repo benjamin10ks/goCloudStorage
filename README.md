@@ -1,8 +1,11 @@
 Self-hosted cloud storage system written in Go
 
+Pre-requisites:
+Go 1.25 >=
+
 ## Features implemented
 
-- [ ] HTMX gui # loading animations in progress
+- [x] HTMX gui # loading animations in progress
 
 - [x] User authentication # Passkey and Github OAuth with
       provider strategy support soon
