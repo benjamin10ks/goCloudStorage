@@ -46,9 +46,13 @@ func (a *App) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	fileType, err := getFileType(file)
+	fileType := header.Header.Get("Content-Type")
+	if fileType == "" {
+		fileType = "application/octet-stream"
+	}
+	log.Printf("Determined file type: %s", fileType)
 
-	fileID, err := saveFileWithSize(ctx, a.db, user.ID, header.Filename, path, header.Size, mimeType)
+	fileID, err := saveFileWithSize(ctx, a.db, user.ID, header.Filename, path, header.Size, fileType)
 	if err != nil {
 		log.Printf("Failed to save file path to DB: %v", err)
 		err = a.storage.DeleteFile(path)
@@ -102,6 +106,7 @@ func (a *App) handleDownloadFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to retrieve file", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Retrieved file for download: %s (ID: %d)", file.FileName, file.ID)
 
 	f, err := os.Open(file.FilePath)
 	if err != nil {
@@ -110,10 +115,12 @@ func (a *App) handleDownloadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer f.Close()
+	log.Printf("Opened file for download: %s", file.FilePath)
 
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", file.FileName))
 	w.Header().Set("Content-Type", file.Type)
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", file.Size))
+	log.Printf("Set response headers for file download: Content-Disposition=attachment; filename=%q, Content-Type=%s, Content-Length=%d", file.FileName, file.Type, file.Size)
 
 	if _, err := io.Copy(w, f); err != nil {
 		log.Printf("Failed to send file to client: %v", err)

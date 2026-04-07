@@ -14,11 +14,11 @@
     <div class="file-meta">{{.CreatedAt}}</div>
     
     <div class="file-actions">
-        <button class="btn btn-secondary btn-icon" 
-                hx-get="/api/files/{{.ID}}/download"
-                title="Download">
+        <a href="/api/files/{{.ID}}/download" 
+           class="btn btn-secondary btn-icon" 
+           title="Download">
             ⬇️
-        </button>
+        </a>
         <button class="btn btn-secondary btn-icon"
                 hx-get="/api/files/{{.ID}}/share-modal"
                 hx-target="#modal-container"

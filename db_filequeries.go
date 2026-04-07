@@ -15,7 +15,7 @@ func saveFileWithSize(ctx context.Context, db *sql.DB, userID int64, filename st
 	if err != nil {
 		return 0, err
 	}
-	result, err := tx.ExecContext(ctx, "INSERT INTO files (user_id, filename, filepath, size, type) VALUES (?, ?, ?, ?, '')", userID, filename, path, size)
+	result, err := tx.ExecContext(ctx, "INSERT INTO files (user_id, filename, filepath, size, type) VALUES (?, ?, ?, ?, ?)", userID, filename, path, size, mimeType)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
