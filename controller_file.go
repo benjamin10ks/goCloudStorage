@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -43,7 +46,9 @@ func (a *App) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	fileID, err := saveFileWithSize(ctx, a.db, user.ID, header.Filename, path, header.Size)
+	fileType, err := getFileType(file)
+
+	fileID, err := saveFileWithSize(ctx, a.db, user.ID, header.Filename, path, header.Size, mimeType)
 	if err != nil {
 		log.Printf("Failed to save file path to DB: %v", err)
 		err = a.storage.DeleteFile(path)
@@ -80,6 +85,39 @@ func (a *App) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleDownloadFile(w http.ResponseWriter, r *http.Request) {
+	user, ok := userFromContext(r.Context())
+	if !ok {
+		log.Printf("User not found in context")
+		http.Error(w, "Unauthorized: user not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	fileID := r.PathValue("id")
+
+	ctx := r.Context()
+
+	file, err := getFileByID(ctx, a.db, user.ID, fileID)
+	if err != nil {
+		log.Printf("Failed to retrieve file: %v", err)
+		http.Error(w, "Failed to retrieve file", http.StatusInternalServerError)
+		return
+	}
+
+	f, err := os.Open(file.FilePath)
+	if err != nil {
+		log.Printf("Failed to open file for download: %v", err)
+		http.Error(w, "Failed to open file for download", http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", file.FileName))
+	w.Header().Set("Content-Type", file.Type)
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", file.Size))
+
+	if _, err := io.Copy(w, f); err != nil {
+		log.Printf("Failed to send file to client: %v", err)
+	}
 }
 
 func (a *App) handleDeleteFile(w http.ResponseWriter, r *http.Request) {

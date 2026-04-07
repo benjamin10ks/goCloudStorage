@@ -81,7 +81,7 @@ func main() {
 	mux.HandleFunc("POST /api/files/upload", app.requireAuth(app.handleUploadFile))
 	mux.HandleFunc("GET /api/files/{id}/download", app.requireAuth(app.handleDownloadFile))
 	mux.HandleFunc("DELETE /api/files/delete/{id}", app.requireAuth(app.handleDeleteFile))
-	mux.HandleFunc("POST /api/files/{id}/share", app.requireAuth(app.handleShareFile))
+	mux.HandleFunc("POST /api/files/share/{id}", app.requireAuth(app.handleShareFile))
 
 	log.Printf("Starting server on %s", server.Addr)
 	if err := server.ListenAndServe(); err != nil {

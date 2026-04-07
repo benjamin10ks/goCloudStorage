@@ -6,11 +6,11 @@ import (
 	"log"
 )
 
-func savePathToDB(ctx context.Context, db *sql.DB, userID int64, filename string, path string) (int64, error) {
-	return saveFileWithSize(ctx, db, userID, filename, path, 0)
+func savePathToDB(ctx context.Context, db *sql.DB, userID int64, filename string, path string, mimeType string) (int64, error) {
+	return saveFileWithSize(ctx, db, userID, filename, path, 0, mimeType)
 }
 
-func saveFileWithSize(ctx context.Context, db *sql.DB, userID int64, filename string, path string, size int64) (int64, error) {
+func saveFileWithSize(ctx context.Context, db *sql.DB, userID int64, filename string, path string, size int64, mimeType string) (int64, error) {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -64,6 +64,26 @@ func getUserFiles(ctx context.Context, db *sql.DB, userID int64) ([]File, error)
 		return nil, err
 	}
 	return files, nil
+}
+
+func getFileByID(ctx context.Context, db *sql.DB, userID int64, fileID string) (*File, error) {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var file File
+	err = tx.QueryRowContext(ctx, "SELECT id, filename, filepath, type, size, created_at FROM files WHERE id = ? AND user_id = ?", fileID, userID).Scan(&file.ID, &file.FileName, &file.FilePath, &file.Type, &file.Size, &file.FileMetadata.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &file, nil
 }
 
 func getFilepathByID(ctx context.Context, db *sql.DB, userID int64, fileID string) (string, error) {
