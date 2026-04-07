@@ -27,11 +27,27 @@
     <input type="file" 
            id="upload-input" 
            name="file"
-           hx-post="/api/files/upload"
-           hx-encoding="multipart/form-data"
-           hx-target="#files-grid"
-           hx-swap="afterbegin">
+           onchange="handleFileUpload(this)">
 </form>
+
+<!-- Upload Progress Overlay -->
+<div id="upload-overlay" class="upload-overlay" style="display: none;">
+    <div style="background: white; border-radius: 16px; padding: 2rem; min-width: 400px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <div class="spinner"></div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.1rem;">Uploading file...</div>
+                <div style="color: var(--text-muted); font-size: 0.9rem;" id="upload-filename"></div>
+            </div>
+        </div>
+        <div style="background: var(--bg-main); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+            <div id="upload-progress-bar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+        </div>
+        <div style="text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+            <span id="upload-percentage">0%</span> • <span id="upload-size">0 KB / 0 KB</span>
+        </div>
+    </div>
+</div>
 
 <!-- File modals loaded via HTMX -->
 <div id="modal-container"></div>
@@ -67,5 +83,84 @@ document.body.addEventListener('fileUploaded', function() {
     
     document.getElementById('upload-input').value = '';
 });
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 KB';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+function handleFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const overlay = document.getElementById('upload-overlay');
+    const progressBar = document.getElementById('upload-progress-bar');
+    const percentage = document.getElementById('upload-percentage');
+    const sizeDisplay = document.getElementById('upload-size');
+    const filename = document.getElementById('upload-filename');
+    
+    filename.textContent = file.name;
+    overlay.style.display = 'flex';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const xhr = new XMLHttpRequest();
+    
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = percent + '%';
+            percentage.textContent = percent + '%';
+            sizeDisplay.textContent = formatBytes(e.loaded) + ' / ' + formatBytes(e.total);
+        }
+    });
+    
+    xhr.addEventListener('load', function() {
+        if (xhr.status === 200 || xhr.status === 201) {
+            const emptyState = document.getElementById('empty-state');
+            const filesGrid = document.getElementById('files-grid');
+            
+            if (emptyState) emptyState.style.display = 'none';
+            if (filesGrid) {
+                filesGrid.style.display = 'grid';
+                filesGrid.insertAdjacentHTML('afterbegin', xhr.responseText);
+            }
+            
+            overlay.style.display = 'none';
+            progressBar.style.width = '0%';
+            input.value = '';
+            
+            const toast = new CustomEvent('showToast', {
+                detail: { value: { type: 'success', message: 'File uploaded successfully!' } }
+            });
+            document.body.dispatchEvent(toast);
+        } else {
+            overlay.style.display = 'none';
+            progressBar.style.width = '0%';
+            
+            const toast = new CustomEvent('showToast', {
+                detail: { value: { type: 'error', message: 'Upload failed. Please try again.' } }
+            });
+            document.body.dispatchEvent(toast);
+        }
+    });
+    
+    xhr.addEventListener('error', function() {
+        overlay.style.display = 'none';
+        progressBar.style.width = '0%';
+        
+        const toast = new CustomEvent('showToast', {
+            detail: { value: { type: 'error', message: 'Upload failed. Please try again.' } }
+        });
+        document.body.dispatchEvent(toast);
+    });
+    
+    xhr.open('POST', '/api/files/upload');
+    xhr.send(formData);
+}
 </script>
 {{end}}
